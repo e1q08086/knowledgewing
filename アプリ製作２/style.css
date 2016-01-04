@@ -1,0 +1,46 @@
+h1 {
+	background-color:#80ffff;
+	color:#ff0000;
+	text-align:center;
+}
+
+div#left {
+	float:left;
+	width:200px;
+	height:600px;
+	background-color:#bfffbf;
+}
+
+div#left {
+	float:left;
+	width:200px;
+	height:600px;
+	background-color:#bfffbf;
+}
+
+
+div#main {
+	float:left;
+	width:600px;
+	height:600px;
+	background-color:#d5ffff;
+	padding:5px;
+}
+
+div#footer {
+	width:800px;
+	text-align:right;
+	clear:both;
+	background-color:#ffffbf;
+	wid
+}
+
+p.menu {
+	margin:20px;
+	text-align:center;
+}
+
+table#syumi {
+	margin:20px;
+	text-align:center;
+}

@@ -1,0 +1,261 @@
+<html>
+    <head>
+        <title>タイトル</title>
+    </head>
+    <body style="">
+        <pre>
+Dim MyBook As Workbook
+Dim YourBook As Workbook
+
+Sub main()
+    Dim sumFile As Integer
+    Dim i As Integer
+    Dim MainWB As Workbook
+    Dim myRange As Range
+    Dim myRange2 As Range
+    Dim myRange3 As Range
+    Dim myWorkbookName As String
+    Dim myWorkbook() As Workbook
+    Dim sumWorkSheets() As Integer
+    Dim select1 As Range
+    Set MainWB = Workbooks("ファイル作業.xlsm")
+    sumFile = MainWB.Worksheets(1).Cells(1, 4)
+    ReDim myWorkbook(sumFile)
+    ReDim sumWorkSheets(sumFile)
+
+
+'Step1ブックを開く
+    For i = 0 To sumFile - 1
+        myWorkbookName = GetFileName(i)
+        Set myWorkbook(i) = FileOpen(myWorkbookName)
+        sumWorkSheets(i) = GetSumWorkSheets(myWorkbook(i))
+    Next
+'    For i = 0 To sumFile - 1
+'        Debug.Print myWorkbook(i).Name
+'        Debug.Print sumWorkSheets(i)
+'        For j = 1 To sumWorkSheets(i)
+'            Debug.Print Workbooks(myWorkbook(i).Name).Worksheets(j).Name
+'        Next
+'    Next
+'Step2選択貼り付け
+    myWorkbook(0).Worksheets(1).Activate
+    Set myRange = Range("A2")
+    Set myRange2 = A_Sample020(myRange, 1)
+
+    myRange2.Copy
+    myWorkbook(2).Worksheets(1).Range("A1").PasteSpecial Paste:=xlPasteValues
+    Application.CutCopyMode = False
+'Step3絞込み
+    myWorkbook(1).Worksheets(1).Activate
+    With Worksheets(1)
+        .Range("A1").AutoFilter _
+            Field:=14, _
+            Criteria1:="=○"
+    End With
+    With Worksheets(1)
+        .Range("A1").AutoFilter _
+            Field:=12, _
+            Criteria1:="<>"
+    End With
+'Step4選択貼り付け2
+    myWorkbook(2).Worksheets(1).Activate
+    Set myRange = AllSelectColumns(Range("A1"))
+
+    myWorkbook(1).Worksheets(1).Activate
+    Set myRange2 = A_Sample020(Range("A3"), 1)
+    myRange2.Copy
+    myWorkbook(2).Worksheets(1).Activate
+    myWorkbook(2).Worksheets(1).Range(Cells(myRange.Row + 1, myRange.Column), Cells(myRange.Row + 1, myRange.Column)).PasteSpecial Paste:=xlPasteValues
+    Application.CutCopyMode = False
+    
+'Step5絞り込み
+'    Set myRange = A_Sample020(Range("A1"), 0)
+    With Worksheets(1)
+        .Range("A1").Insert xlDown
+        .Range("A1").Value = "見出し"
+        Set myRange = .Range(.Cells(1, 1), .Cells(Rows.Count, 1).End(xlUp))
+        Set rngC = Worksheets("Sheet1").Range("E1")
+        myRange.AdvancedFilter _
+            Action:=xlFilterCopy, _
+            CopyToRange:=rngC, _
+            Unique:=True
+        .Range("A1").Delete xlUp
+    End With
+    With Worksheets("Sheet1")
+        .Range("E:E").ClearContents
+        .Range("E1").Delete xlUp
+    End With
+
+
+
+    myRange = AllSelectRow(Range("A1"))
+
+    
+    myWorkbook(1).Worksheets(1).Activate
+    myWorkbook(1).Worksheets(1).AutoFilterMode = False
+    
+    
+    
+    Set myRange = A_Sample020(Range("A1"), 0)
+    myRange2.Copy
+    
+
+End Sub
+
+'**********************************
+'*        ファイル名の取得
+'**********************************
+'引数　　なし
+'戻り値　セルから取得したファイル名
+'機能　同フォルダにあるファイルを開く
+Function GetFileName(num As Integer) As String
+    With ThisWorkbook.Worksheets(1)
+        GetFileName = .Cells(2 + num, 2)
+    End With
+End Function
+
+
+'**********************************
+'*        ファイルオープン
+'**********************************
+'引数　開くファイル名
+'機能　同フォルダにあるファイルを開く
+Function FileOpen(OpenFileName As String) As Workbook
+'    OpenFileName = "楕円.xlsm"
+    OpenFileName = ThisWorkbook.Path & "\" & OpenFileName
+    Workbooks.Open fileName:=OpenFileName
+    Set FileOpen = Application.ActiveWorkbook
+'    MsgBox MyBook.Name
+End Function
+
+'**********************************
+'*        シート数の取得
+'**********************************
+'引数　シート数を数えるWorkBook
+'戻り値 WorkBookのシート数
+'機能
+Function GetSumWorkSheets(Book As Workbook) As Integer
+    GetSumWorkSheets = Book.Worksheets.Count
+End Function
+
+
+'****************************************
+'*       最終セルの取得（単一行対象）横Find未使用版
+'****************************************
+'引数
+'戻り値
+'機能　指定した行の最終セルを取得する
+Function A_Sample017(ASelectRowRange As Range) As Range
+    Dim myRng1 As Range
+    Dim myRng2 As Range
+    Set myRng1 = Cells(ASelectRowRange.Row, Columns.Count)
+    With myRng1
+        If Len(.PrefixCharacter & .Formula) > 0 Then
+            Set myRng2 = ASelectRowRange     '右端のセルが該当する場合
+        Else
+            With .End(xlToLeft)
+                If Len(.PrefixCharacter & .Formula) > 0 Then
+                    Set myRng2 = .Cells(1)
+                End If
+            End With
+        End If
+    End With
+    If myRng2 Is Nothing Then
+        MsgBox "何も入力されていません。"
+    Else
+        myRng2.Select               '確認用
+        MsgBox myRng2.Address
+        Range(Cells(ASelectRowRange.Row, ASelectRowRange.Column), Cells(myRng2.Row, myRng2.Column)).Select
+        Set A_Sample017 = Range(Cells(ASelectRowRange.Row, ASelectRowRange.Column), Cells(myRng2.Row, myRng2.Column))
+
+
+    End If            'オブジェクトの解放
+    Set myRng1 = Nothing
+    Set myRng2 = Nothing
+End Function
+
+
+
+
+'**********************************
+'*  最終セルの取得（単一行対象）横
+'**********************************
+'引数 ASelectRowRange このセルから横方向の最終セルまでを選択状態にする
+'戻り値　AllSelectRow　セレクト状態のレンジを返す
+'機能　指定した行の最終セルを取得する
+Function AllSelectRow(ASelectRowRange As Range) As Range
+    Set AllSelectRow = Rows(1).Find(What:="*", After:=ASelectRowRange _
+        , LookIn:=xlFormulas, SearchOrder:=xlByColumns, SearchDirection:=xlNext)
+    If AllSelectRow Is Nothing Then
+        MsgBox "何も入力されていません。function_AllSelectRow"
+    Else
+        Range(Cells(ASelectRowRange.Row, ASelectRowRange.Column), Cells(ASelectRowRange.Row, AllSelectRow.Column)).Select
+        MsgBox AllSelectRow.Address
+'        AllSelectRow.Select '確認用
+'        MsgBox AllSelectRow.Address
+    End If
+End Function
+Sub test()
+'ra = AllSelectRow(Range("D7"))
+'rr = A_Sample018(Range("A1"))
+Set rr = A_Sample017(Range("B5"))
+Set rr = A_Sample020(Range("E6"))
+
+End Sub
+
+'****************************************
+'*       最終セルの取得（単一列対象）縦
+'****************************************
+'引数   ASelectColumnsRange このセルから縦方向の最終セルまでを選択状態にする
+'戻り値 AllSelectColumns　セレクト状態のレンジを返す
+'機能　指定した列の最終セルを取得する
+Function AllSelectColumns(ASelectColumnsRange As Range) As Range
+    Set AllSelectColumns = Columns(1).Find(What:="*", After:=ASelectColumnsRange _
+        , LookIn:=xlValues, SearchDirection:=xlPrevious)
+    If AllSelectColumns Is Nothing Then
+        MsgBox "何も入力されていません。"
+    Else
+        AllSelectColumns.Select '確認用
+        MsgBox AllSelectColumns.Address
+
+    End If
+    Set myRng = Nothing    'オブジェクトの解放
+End Function
+
+
+'****************************************
+'*       最終セルの取得（単一列対象）縦
+'****************************************
+'引数   ASelectColumnsRange このセルから縦方向の最終セルまでを選択状態にする
+'戻り値 AllSelectColumns　セレクト状態のレンジを返す
+'機能　指定した列の最終セルを取得する
+Function A_Sample020(ASelectColumnRange As Range, plus As Integer) As Range
+    Dim myRng1 As Range
+    Dim myRng2 As Range
+    Set myRng1 = Cells(Rows.Count, ASelectColumnRange.Column)    '下端のセルを取得
+    With myRng1
+    If Len(.PrefixCharacter & .Formula) > 0 Then
+            Set myRng2 = ASelectColumnRange    '下端のセルが該当する場合
+        Else
+            With .End(xlUp)
+                If Len(.PrefixCharacter & .Formula) > 0 Then
+                    Set myRng2 = .Cells(1)
+                End If
+            End With
+        End If
+    End With
+    If myRng2 Is Nothing Then
+        MsgBox "何も入力されていません。"
+    Else
+        myRng2.Select '確認用
+        MsgBox myRng2.Address
+        Range(Cells(ASelectColumnRange.Row, ASelectColumnRange.Column), Cells(myRng2.Row, myRng2.Column + plus)).Select
+        Set A_Sample020 = Range(Cells(ASelectColumnRange.Row, ASelectColumnRange.Column), Cells(myRng2.Row, myRng2.Column + plus))
+    End If
+    Set myRng1 = Nothing    'オブジェクトの解放
+    Set myRng2 = Nothing
+End Function
+
+	</pre>
+    </body>
+</html>
